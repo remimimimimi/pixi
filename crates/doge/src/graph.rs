@@ -375,6 +375,11 @@ where
             .unwrap_or_else(|_| Vec::new())
     }
 
+    /// Get dependency nodes (parents) for a given node
+    pub fn get_dependency_nodes(&self, node_index: NodeIndex) -> Vec<NodeIndex> {
+        self.dag.parents(node_index).iter(&self.dag).map(|(_, parent_index)| parent_index).collect()
+    }
+
     /// Get statistics about the graph
     pub fn stats(&self) -> GraphStats {
         GraphStats {

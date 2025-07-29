@@ -10,6 +10,7 @@ use tokio::sync::{mpsc, oneshot, Semaphore};
 use tokio::time::timeout;
 use tracing::{debug, error, info};
 
+use crate::context::TaskContext;
 use crate::error::{DogeError, DogeResult, ExecutionError};
 use crate::graph::{NodeIndex, TaskGraph};
 use crate::task::{AsyncTask, TaskId, TaskMetadata, TaskResult};
@@ -192,13 +193,26 @@ impl DogeExecutor {
             // Start new tasks if possible
             while active_tasks < self.config.max_concurrent_tasks {
                 if let Some(node_index) = graph.next_ready_task() {
-                    let node = graph.get_node_mut(node_index).unwrap();
-                    node.metadata.mark_started();
+                    // Build context before taking mutable reference
+                    let context = self.build_task_context(node_index, &graph, &results);
                     
-                    let task_future = self.execute_single_task(
+                    // Clone task data after building context
+                    let (task, metadata, task_id, task_name) = {
+                        let node = graph.get_node_mut(node_index).unwrap();
+                        node.metadata.mark_started();
+                        (
+                            node.task.clone(),
+                            node.metadata.clone(),
+                            node.metadata.id,
+                            node.metadata.name.clone(),
+                        )
+                    };
+                    
+                    let task_future = self.execute_single_task_with_context(
                         node_index,
-                        node.task.clone(),
-                        node.metadata.clone(),
+                        task,
+                        metadata,
+                        context,
                         semaphore.clone(),
                         progress_sender.clone(),
                         results.clone(),
@@ -209,8 +223,8 @@ impl DogeExecutor {
                     stats.peak_concurrent_tasks = stats.peak_concurrent_tasks.max(active_tasks);
                     
                     let _ = progress_sender.send(ProgressEvent::TaskStarted {
-                        task_id: node.metadata.id,
-                        task_name: node.metadata.name.clone(),
+                        task_id,
+                        task_name,
                     });
                 } else {
                     break;
@@ -320,12 +334,13 @@ impl DogeExecutor {
         Ok((handle, final_results))
     }
 
-    /// Execute a single task with retry logic
-    async fn execute_single_task<T: AsyncTask>(
+    /// Execute a single task with retry logic and context
+    async fn execute_single_task_with_context<T: AsyncTask>(
         &self,
         node_index: NodeIndex,
         task: T,
         mut metadata: TaskMetadata,
+        context: TaskContext,
         semaphore: Arc<Semaphore>,
         progress_sender: mpsc::UnboundedSender<ProgressEvent>,
         results: Arc<DashMap<NodeIndex, TaskResult<T::Output, T::Error>>>,
@@ -362,8 +377,8 @@ impl DogeExecutor {
                 }
             }
 
-            // Execute the task
-            let task_future = task.execute();
+            // Execute the task with context
+            let task_future = task.execute_with_context(&context);
             let task_result = if let Some(task_timeout) = self.config.default_task_timeout {
                 match timeout(task_timeout, task_future).await {
                     Ok(result) => result,
@@ -449,6 +464,46 @@ impl DogeExecutor {
         }
         
         self.cache.insert(key, Box::new(value));
+    }
+
+    /// Build task context with dependency results
+    fn build_task_context<T: AsyncTask>(
+        &self,
+        node_index: NodeIndex,
+        graph: &TaskGraph<T>,
+        results: &DashMap<NodeIndex, TaskResult<T::Output, T::Error>>,
+    ) -> TaskContext {
+        use std::collections::HashMap;
+        use std::any::Any;
+        
+        let mut dependency_results = HashMap::new();
+        let mut task_id_to_node = HashMap::new();
+        
+        // Get the current task node to find its dependencies
+        if let Some(_current_node) = graph.get_node(node_index) {
+            // Find all dependency nodes by traversing parents in the DAG
+            for parent_node_index in graph.get_dependency_nodes(node_index) {
+                if let Some(parent_node) = graph.get_node(parent_node_index) {
+                    // Check if we have a result for this dependency
+                    if let Some(result_entry) = results.get(&parent_node_index) {
+                        match result_entry.value() {
+                            TaskResult::Success(output) => {
+                                // Store the successful result
+                                dependency_results.insert(
+                                    parent_node_index,
+                                    Box::new(output.clone()) as Box<dyn Any + Send + Sync>
+                                );
+                                task_id_to_node.insert(parent_node.metadata.id, parent_node_index);
+                            }
+                            // Don't include failed or cancelled results in context
+                            _ => {}
+                        }
+                    }
+                }
+            }
+        }
+        
+        TaskContext::with_dependencies(dependency_results, task_id_to_node)
     }
 }
 
@@ -706,5 +761,69 @@ mod tests {
         
         assert!(matches!(results[&node1], TaskResult::Success(1)));
         assert!(matches!(results[&node2], TaskResult::Success(2)));
+    }
+
+    #[tokio::test]
+    async fn test_dependency_context() {
+        #[derive(Clone, Debug, PartialEq, Eq, Hash)]
+        struct ContextTask {
+            id: u32,
+            name: String,
+        }
+
+        #[async_trait::async_trait]
+        impl AsyncTask for ContextTask {
+            type Output = i32;
+            type Error = String;
+
+            async fn execute_with_context(&self, context: &crate::context::TaskContext) -> Result<Self::Output, Self::Error> {
+                let mut sum = self.id as i32;
+                
+                // Add all dependency results to our value
+                for node_index in context.dependency_nodes() {
+                    if let Some(dep_result) = context.get_dependency_result::<i32>(node_index) {
+                        sum += dep_result;
+                    }
+                }
+                
+                Ok(sum)
+            }
+
+            async fn execute(&self) -> Result<Self::Output, Self::Error> {
+                // Fallback - just return the id
+                Ok(self.id as i32)
+            }
+
+            fn name(&self) -> String {
+                self.name.clone()
+            }
+        }
+
+        let executor = DogeExecutor::new();
+        let mut graph = TaskGraph::new();
+        
+        // Create a dependency chain: task1 -> task2 -> task3
+        let task1 = ContextTask { id: 10, name: "task1".to_string() };
+        let task2 = ContextTask { id: 20, name: "task2".to_string() };
+        let task3 = ContextTask { id: 30, name: "task3".to_string() };
+        
+        let node1 = graph.add_task(task1);
+        let node2 = graph.add_task(task2);
+        let node3 = graph.add_task(task3);
+        
+        // Set up dependencies: task1 -> task2 -> task3
+        graph.add_dependency(node1, node2).unwrap();
+        graph.add_dependency(node2, node3).unwrap();
+        
+        let results = executor.execute(graph).await.unwrap();
+        
+        // task1 should just return 10 (no dependencies)
+        assert!(matches!(results[&node1], TaskResult::Success(10)));
+        
+        // task2 should return 20 + 10 = 30 (its id + task1's result)
+        assert!(matches!(results[&node2], TaskResult::Success(30)));
+        
+        // task3 should return 30 + 30 = 60 (its id + task2's result)
+        assert!(matches!(results[&node3], TaskResult::Success(60)));
     }
 }

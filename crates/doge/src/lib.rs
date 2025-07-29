@@ -54,12 +54,14 @@
 //! }
 //! ```
 
+pub mod context;
 pub mod error;
 pub mod executor;
 pub mod graph;
 pub mod task;
 pub mod types;
 
+pub use context::TaskContext;
 pub use error::{DogeError, ExecutionError};
 pub use executor::DogeExecutor;
 pub use graph::{TaskGraph, TaskNode, NodeIndex};

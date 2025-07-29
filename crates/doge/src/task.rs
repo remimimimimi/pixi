@@ -155,7 +155,16 @@ pub trait AsyncTask: Clone + Debug + Hash + Eq + Send + Sync + 'static {
     type Error: Clone + Debug + Send + Sync + 'static;
 
     /// Execute the task asynchronously
-    async fn execute(&self) -> Result<Self::Output, Self::Error>;
+    async fn execute(&self) -> Result<Self::Output, Self::Error> {
+        // Default implementation for backward compatibility
+        self.execute_with_context(&crate::context::TaskContext::new()).await
+    }
+
+    /// Execute the task asynchronously with access to dependency results
+    async fn execute_with_context(&self, _context: &crate::context::TaskContext) -> Result<Self::Output, Self::Error> {
+        // Default implementation delegates to the old execute method
+        self.execute().await
+    }
 
     /// Get a human-readable name for this task (used for logging and debugging)
     fn name(&self) -> String {
