@@ -1,0 +1,36 @@
+[package]
+name = "doge"
+version = "0.1.0"
+edition = "2021"
+authors = ["Pixi Contributors"]
+description = "Async DAG task executor built on daggy and tokio"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/prefix-dev/pixi"
+
+[dependencies]
+# Core dependencies
+daggy = "0.8"
+tokio = { version = "1.0", features = ["rt", "sync", "time", "macros"] }
+futures = "0.3"
+async-trait = "0.1"
+
+# Error handling and serialization
+thiserror = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+
+# Utility dependencies
+tracing = "0.1"
+uuid = { version = "1.0", features = ["v4"] }
+dashmap = "5.5"
+pin-project-lite = "0.2"
+num_cpus = "1.0"
+
+[dev-dependencies]
+tokio-test = "0.4"
+tokio = { version = "1.0", features = ["rt", "sync", "time", "macros", "rt-multi-thread"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+rand = "0.8"
+
+[features]
+default = ["serde"]
+serde = ["daggy/serde", "uuid/serde"]

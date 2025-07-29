@@ -1654,6 +1654,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "daggy"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "70def8d72740e44d9f676d8dab2c933a236663d86dd24319b57a2bed4d694774"
+dependencies = [
+ "petgraph 0.7.1",
+ "serde",
+]
+
+[[package]]
 name = "darling"
 version = "0.20.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1686,6 +1696,19 @@ dependencies = [
  "darling_core",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "dashmap"
+version = "5.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "978747c1d849a7d2ee5e8adc0159961c48fb7e5db2f06af6723b80123bb53856"
+dependencies = [
+ "cfg-if",
+ "hashbrown 0.14.5",
+ "lock_api",
+ "once_cell",
+ "parking_lot_core",
 ]
 
 [[package]]
@@ -1903,6 +1926,26 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "doge"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "daggy",
+ "dashmap 5.5.3",
+ "futures",
+ "num_cpus",
+ "pin-project-lite",
+ "rand 0.8.5",
+ "serde",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-test",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
 ]
 
 [[package]]
@@ -4640,7 +4683,7 @@ dependencies = [
  "crossbeam-channel",
  "csv",
  "ctrlc",
- "dashmap",
+ "dashmap 6.1.0",
  "deno_task_shell",
  "dialoguer",
  "dirs",
@@ -4955,7 +4998,7 @@ dependencies = [
 name = "pixi_git"
 version = "0.0.1"
 dependencies = [
- "dashmap",
+ "dashmap 6.1.0",
  "dunce",
  "fs-err",
  "pixi_utils",
@@ -4974,7 +5017,7 @@ dependencies = [
 name = "pixi_glob"
 version = "0.1.0"
 dependencies = [
- "dashmap",
+ "dashmap 6.1.0",
  "fs-err",
  "insta",
  "itertools 0.14.0",
@@ -5477,7 +5520,7 @@ name = "pypi_mapping"
 version = "0.1.0"
 dependencies = [
  "async-once-cell",
- "dashmap",
+ "dashmap 6.1.0",
  "fs-err",
  "futures",
  "http-cache-reqwest",
@@ -5765,7 +5808,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4397ef3a8ea358170984a98462ea567d0757e45c49dbb01f68ed8ace3569d1eb"
 dependencies = [
  "anyhow",
- "dashmap",
+ "dashmap 6.1.0",
  "digest",
  "dirs",
  "fs-err",
@@ -6012,7 +6055,7 @@ dependencies = [
  "cache_control",
  "cfg-if",
  "chrono",
- "dashmap",
+ "dashmap 6.1.0",
  "dirs",
  "file_url",
  "fs-err",
@@ -7763,6 +7806,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "tokio-test"
+version = "0.4.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2468baabc3311435b55dd935f702f42cd1b8abb7e754fb7dfb16bd36aa88f9f7"
+dependencies = [
+ "async-stream",
+ "bytes",
+ "futures-core",
+ "tokio",
+ "tokio-stream",
+]
+
+[[package]]
 name = "tokio-util"
 version = "0.7.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8145,6 +8201,7 @@ dependencies = [
  "getrandom 0.3.3",
  "js-sys",
  "rand 0.9.1",
+ "serde",
  "wasm-bindgen",
 ]
 
@@ -8592,7 +8649,7 @@ source = "git+https://github.com/astral-sh/uv?tag=0.7.20#2514203964449fcd3a5cac3
 dependencies = [
  "anyhow",
  "cargo-util",
- "dashmap",
+ "dashmap 6.1.0",
  "fs-err",
  "reqwest",
  "reqwest-middleware",
@@ -8754,7 +8811,7 @@ name = "uv-once-map"
 version = "0.0.1"
 source = "git+https://github.com/astral-sh/uv?tag=0.7.20#2514203964449fcd3a5cac3320963aa57383e6b6"
 dependencies = [
- "dashmap",
+ "dashmap 6.1.0",
  "futures",
  "tokio",
 ]
@@ -8983,7 +9040,7 @@ source = "git+https://github.com/astral-sh/uv?tag=0.7.20#2514203964449fcd3a5cac3
 dependencies = [
  "arcstr",
  "clap",
- "dashmap",
+ "dashmap 6.1.0",
  "either",
  "futures",
  "hashbrown 0.15.4",
@@ -9113,7 +9170,7 @@ version = "0.0.1"
 source = "git+https://github.com/astral-sh/uv?tag=0.7.20#2514203964449fcd3a5cac3320963aa57383e6b6"
 dependencies = [
  "anyhow",
- "dashmap",
+ "dashmap 6.1.0",
  "rustc-hash",
  "thiserror 2.0.12",
  "uv-cache",
