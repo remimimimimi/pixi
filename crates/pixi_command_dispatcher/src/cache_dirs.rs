@@ -136,4 +136,9 @@ impl CacheDirs {
             ))
         })
     }
+
+    /// Returns the directory where source archives (URL sources) are cached.
+    pub fn source_archives(&self) -> PathBuf {
+        self.root.join("source-archives")
+    }
 }

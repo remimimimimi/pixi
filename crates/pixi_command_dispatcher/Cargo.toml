@@ -14,6 +14,7 @@ base64 = { workspace = true }
 chrono = { workspace = true }
 derive_more = { workspace = true, features = ["from", "try_into"] }
 dirs = { workspace = true }
+flate2 = { workspace = true }
 fs-err = { workspace = true }
 futures = { workspace = true }
 itertools = { workspace = true }
@@ -24,14 +25,18 @@ reqwest-middleware = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 serde_with = { workspace = true }
+sha2 = { workspace = true }
 slotmap = { workspace = true }
 strsim = { workspace = true }
+tar = { workspace = true }
+tempfile = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["rt", "sync"] }
 tracing = { workspace = true }
 typed-path = { workspace = true }
 url = { workspace = true }
 xxhash-rust = { workspace = true, features = ["xxh3"] }
+zip = { workspace = true }
 
 rattler = { workspace = true }
 rattler_conda_types = { workspace = true }
