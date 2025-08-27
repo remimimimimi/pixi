@@ -26,6 +26,9 @@ pub struct CacheDirs {
     /// The directory where git repositories are cached.
     git: Option<PathBuf>,
 
+    /// The directory where source archives (URL sources) are cached.
+    source_archives: Option<PathBuf>,
+
     /// The location where to store source metadata information.
     source_metadata: Option<PathBuf>,
 
@@ -43,6 +46,7 @@ impl CacheDirs {
             work_dirs: None,
             packages: None,
             git: None,
+            source_archives: None,
             source_metadata: None,
             source_builds: None,
         }
@@ -135,5 +139,12 @@ impl CacheDirs {
                 BuildCache::CACHE_SUFFIX
             ))
         })
+    }
+
+    /// Returns the directory where source archives (URL sources) are cached.
+    pub fn source_archives(&self) -> PathBuf {
+        self.source_archives
+            .clone()
+            .unwrap_or_else(|| self.root.join(consts::CACHED_SOURCE_ARCHIVES_DIR))
     }
 }

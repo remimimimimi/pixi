@@ -32,6 +32,21 @@ pub enum SourceCheckoutError {
 
     #[error(transparent)]
     GitError(#[from] GitError),
+
+    #[error("Network error: {0}")]
+    NetworkError(String),
+
+    #[error("Checksum mismatch: {0}")]
+    ChecksumMismatch(String),
+
+    #[error("Unsupported archive format: {0}")]
+    UnsupportedArchiveFormat(String),
+
+    #[error("IO error: {0}")]
+    IoError(#[from] std::io::Error),
+
+    #[error("Archive error: {0}")]
+    ArchiveError(String),
 }
 
 #[derive(Debug, Error)]

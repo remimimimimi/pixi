@@ -51,6 +51,7 @@ mod builder;
 mod error;
 mod git;
 mod instantiate_backend;
+mod url;
 
 /// The command dispatcher is responsible for synchronizing requests between
 /// different conda environments.
@@ -534,8 +535,7 @@ impl CommandDispatcher {
     /// 1. For path sources: Resolving relative paths against the root directory
     /// 2. For git sources: Cloning or fetching the repository and checking out
     ///    the specified reference
-    /// 3. For URL sources: Downloading and extracting the archive (currently
-    ///    unimplemented)
+    /// 3. For URL sources: Downloading and extracting the archive
     ///
     /// The function handles path normalization and ensures security by
     /// preventing directory traversal attacks. It also manages caching of
@@ -546,9 +546,7 @@ impl CommandDispatcher {
         source_location_spec: SourceLocationSpec,
     ) -> Result<SourceCheckout, CommandDispatcherError<SourceCheckoutError>> {
         match source_location_spec {
-            SourceLocationSpec::Url(url) => {
-                unimplemented!("fetching URL sources ({}) is not yet implemented", url.url)
-            }
+            SourceLocationSpec::Url(url_spec) => self.pin_and_checkout_url(url_spec).await,
             SourceLocationSpec::Path(path) => {
                 let source_path = self
                     .data
@@ -593,9 +591,7 @@ impl CommandDispatcher {
                 })
             }
             PinnedSourceSpec::Git(git_spec) => self.checkout_pinned_git(git_spec).await,
-            PinnedSourceSpec::Url(_) => {
-                unimplemented!("fetching URL sources is not yet implemented")
-            }
+            PinnedSourceSpec::Url(url_spec) => self.checkout_pinned_url(url_spec).await,
         }
     }
 }

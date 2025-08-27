@@ -4863,6 +4863,7 @@ dependencies = [
  "chrono",
  "derive_more",
  "dirs",
+ "flate2",
  "fs-err",
  "futures",
  "indexmap 2.10.0",
@@ -4896,9 +4897,11 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_with",
+ "sha2",
  "simple_spawn_blocking",
  "slotmap",
  "strsim",
+ "tar",
  "tempfile",
  "text_trees",
  "thiserror 2.0.16",
@@ -4907,6 +4910,7 @@ dependencies = [
  "typed-path",
  "url",
  "xxhash-rust",
+ "zip 2.4.2",
 ]
 
 [[package]]
