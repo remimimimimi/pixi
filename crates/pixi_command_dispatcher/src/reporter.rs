@@ -113,6 +113,22 @@ pub trait GitCheckoutReporter {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize)]
 #[serde(transparent)]
+pub struct UrlCheckoutId(pub usize);
+
+pub trait UrlCheckoutReporter {
+    /// Called when a URL download was queued on the
+    /// [`crate::CommandDispatcher`].
+    fn on_queued(&mut self, reason: Option<ReporterContext>, url: &url::Url) -> UrlCheckoutId;
+
+    /// Called when the URL download has started.
+    fn on_start(&mut self, checkout_id: UrlCheckoutId);
+
+    /// Called when the URL download has finished.
+    fn on_finished(&mut self, checkout_id: UrlCheckoutId);
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize)]
+#[serde(transparent)]
 pub struct InstantiateToolEnvId(pub usize);
 
 pub trait InstantiateToolEnvironmentReporter {
@@ -232,6 +248,11 @@ pub trait Reporter: Send {
     /// Returns a mutable reference to a reporter that reports on any git
     /// progress.
     fn as_git_reporter(&mut self) -> Option<&mut dyn GitCheckoutReporter> {
+        None
+    }
+    /// Returns a mutable reference to a reporter that reports on URL download
+    /// progress.
+    fn as_url_reporter(&mut self) -> Option<&mut dyn UrlCheckoutReporter> {
         None
     }
     /// Returns a mutable reference to a reporter that reports on conda solve

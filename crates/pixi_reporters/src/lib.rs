@@ -5,6 +5,7 @@ mod release_notes;
 mod repodata_reporter;
 mod run_exports;
 mod sync_reporter;
+mod url;
 pub mod uv_reporter;
 
 use std::sync::{Arc, LazyLock};
@@ -23,6 +24,7 @@ use rattler_repodata_gateway::{Reporter, RunExportsReporter};
 pub use release_notes::format_release_notes;
 use repodata_reporter::RepodataReporter;
 use sync_reporter::SyncReporter;
+use url::UrlCheckoutProgress;
 use uv_configuration::RAYON_INITIALIZE;
 // Re-export the uv_reporter types for external use
 pub use uv_reporter::{UvReporter, UvReporterOptions};
@@ -32,6 +34,7 @@ pub use uv_reporter::{UvReporter, UvReporterOptions};
 /// And subsequently, offloads the work to its sub progress reporters.
 pub struct TopLevelProgress {
     source_checkout_reporter: GitCheckoutProgress,
+    url_checkout_reporter: UrlCheckoutProgress,
     conda_solve_reporter: MainProgressBar<String>,
     repodata_reporter: RepodataReporter,
     sync_reporter: SyncReporter,
@@ -57,8 +60,11 @@ impl TopLevelProgress {
         );
         let source_checkout_reporter =
             GitCheckoutProgress::new(multi_progress.clone(), anchor_pb.clone());
+        let url_checkout_reporter =
+            UrlCheckoutProgress::new(multi_progress.clone(), anchor_pb.clone());
         Self {
             source_checkout_reporter,
+            url_checkout_reporter,
             conda_solve_reporter,
             repodata_reporter,
             sync_reporter: install_reporter,
@@ -83,6 +89,9 @@ impl pixi_command_dispatcher::Reporter for TopLevelProgress {
 
     fn as_git_reporter(&mut self) -> Option<&mut dyn pixi_command_dispatcher::GitCheckoutReporter> {
         Some(&mut self.source_checkout_reporter)
+    }
+    fn as_url_reporter(&mut self) -> Option<&mut dyn pixi_command_dispatcher::UrlCheckoutReporter> {
+        Some(&mut self.url_checkout_reporter)
     }
 
     fn as_source_build_reporter(&mut self) -> Option<&mut dyn SourceBuildReporter> {

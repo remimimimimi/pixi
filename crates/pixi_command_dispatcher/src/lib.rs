@@ -74,7 +74,7 @@ pub use limits::Limits;
 pub use package_identifier::PackageIdentifier;
 pub use reporter::{
     CondaSolveReporter, GitCheckoutReporter, PixiInstallReporter, PixiSolveReporter, Reporter,
-    ReporterContext,
+    ReporterContext, UrlCheckoutReporter,
 };
 use serde::Serialize;
 pub use solve_conda::SolveCondaEnvironmentSpec;

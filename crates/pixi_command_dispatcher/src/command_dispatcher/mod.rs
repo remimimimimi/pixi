@@ -26,6 +26,7 @@ use rattler_repodata_gateway::Gateway;
 use reqwest_middleware::ClientWithMiddleware;
 use tokio::sync::{mpsc, oneshot};
 use typed_path::Utf8TypedPath;
+pub(crate) use url::{UrlCheckoutTask, UrlDownloadResult};
 
 use crate::{
     BuildBackendMetadata, BuildBackendMetadataError, BuildBackendMetadataSpec, Executor,
@@ -51,7 +52,7 @@ mod builder;
 mod error;
 mod git;
 mod instantiate_backend;
-mod url;
+pub mod url;
 
 /// The command dispatcher is responsible for synchronizing requests between
 /// different conda environments.
@@ -195,6 +196,9 @@ slotmap::new_key_type! {
 
     /// A unique id that identifies a git source checkout.
     pub(crate) struct GitCheckoutId;
+
+    /// A unique id that identifies a URL source checkout.
+    pub(crate) struct UrlCheckoutId;
 }
 
 /// An id that uniquely identifies a build backend metadata request.
@@ -228,6 +232,7 @@ pub(crate) enum ForegroundMessage {
     SourceBuild(SourceBuildTask),
     QuerySourceBuildCache(SourceBuildCacheStatusTask),
     GitCheckout(GitCheckoutTask),
+    UrlCheckout(UrlCheckoutTask),
     InstallPixiEnvironment(InstallPixiEnvironmentTask),
     InstantiateToolEnvironment(Task<InstantiateToolEnvironmentSpec>),
     ClearReporter(oneshot::Sender<()>),
