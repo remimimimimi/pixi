@@ -195,7 +195,7 @@ async fn download_and_extract_url(
             SourceCheckoutError::ArchiveError(format!("Failed to keep temp file: {}", e))
         })?;
 
-        extract_archive(&temp_path, &extract_path).await?;
+        extract_archive(&temp_path, &extract_path, &url).await?;
 
         // Clean up temporary file
         let _ = fs_err::remove_file(&temp_path);
@@ -211,15 +211,18 @@ async fn download_and_extract_url(
 async fn extract_archive(
     archive_path: &std::path::Path,
     extract_to: &std::path::Path,
+    original_url: &Url,
 ) -> Result<(), SourceCheckoutError> {
     use flate2::read::GzDecoder;
     use std::fs::File;
     use tar::Archive;
+    use tempfile;
 
     let file = File::open(archive_path).map_err(SourceCheckoutError::IoError)?;
 
-    // Try to detect archive format from file extension or URL
-    let archive_name = archive_path
+    // Try to detect archive format from original URL path
+    let url_path = original_url.path();
+    let archive_name = std::path::Path::new(url_path)
         .file_name()
         .and_then(|n| n.to_str())
         .unwrap_or("");
@@ -239,13 +242,59 @@ async fn extract_archive(
         let mut archive = zip::ZipArchive::new(file).map_err(|e| {
             SourceCheckoutError::ArchiveError(format!("Failed to open ZIP archive: {}", e))
         })?;
-        archive.extract(extract_to).map_err(|e| {
+
+        // Extract to a temporary directory first
+        let tmp_extraction_dir = tempfile::Builder::new()
+            .tempdir_in(extract_to.parent().unwrap_or(extract_to))
+            .map_err(|e| {
+                SourceCheckoutError::ArchiveError(format!("Failed to create temp dir: {}", e))
+            })?;
+
+        archive.extract(&tmp_extraction_dir).map_err(|e| {
             SourceCheckoutError::ArchiveError(format!("Failed to extract ZIP archive: {}", e))
         })?;
+
+        // Move contents, stripping root directory if present (like GitHub's "pixi-main/" directory)
+        move_extracted_dir(tmp_extraction_dir.path(), extract_to)?;
     } else {
-        return Err(SourceCheckoutError::UnsupportedArchiveFormat(
-            archive_name.to_string(),
-        ));
+        return Err(SourceCheckoutError::UnsupportedArchiveFormat(format!(
+            "{} (from URL: {})",
+            archive_name, original_url
+        )));
+    }
+
+    Ok(())
+}
+
+/// Moves the directory content from src to dest after stripping root dir, if present.
+/// This handles the case where archives (like GitHub zips) contain a single root directory.
+fn move_extracted_dir(
+    src: &std::path::Path,
+    dest: &std::path::Path,
+) -> Result<(), SourceCheckoutError> {
+    let mut entries = fs_err::read_dir(src).map_err(SourceCheckoutError::IoError)?;
+    let src_dir = match entries
+        .next()
+        .transpose()
+        .map_err(SourceCheckoutError::IoError)?
+    {
+        // ensure if only single directory in entries(root dir)
+        Some(dir)
+            if entries.next().is_none()
+                && dir
+                    .file_type()
+                    .map_err(SourceCheckoutError::IoError)?
+                    .is_dir() =>
+        {
+            src.join(dir.file_name())
+        }
+        _ => src.to_path_buf(),
+    };
+
+    for entry in fs_err::read_dir(src_dir).map_err(SourceCheckoutError::IoError)? {
+        let entry = entry.map_err(SourceCheckoutError::IoError)?;
+        let destination = dest.join(entry.file_name());
+        fs_err::rename(entry.path(), destination).map_err(SourceCheckoutError::IoError)?;
     }
 
     Ok(())
