@@ -195,6 +195,21 @@ fn spec_from_spanned_toml_location(
         }
     }
 
+    // For build sources, require explicit sha256 for URL sources to
+    // ensure reproducible builds Should be removed once we will be
+    // able to store source revision in lockfile.
+    if let SourceLocationSpec::Url(ref url_spec) = source_location_spec {
+        if url_spec.sha256.is_none() {
+            return Err(DeserError::from(Error {
+                kind: toml_span::ErrorKind::Custom(Cow::Borrowed(
+                    "URL sources in build context require an explicit `sha256` field for reproducible builds",
+                )),
+                span: spanned_toml.span,
+                line_info: None,
+            }));
+        }
+    }
+
     Ok(source_location_spec)
 }
 
@@ -511,5 +526,38 @@ mod test {
                 .additional_dependencies
                 .contains_key(&"git".parse::<rattler_conda_types::PackageName>().unwrap())
         );
+    }
+
+    #[test]
+    fn test_url_source_requires_sha256() {
+        assert_snapshot!(expect_parse_failure(
+            r#"
+            backend = { name = "foobar", version = "*" }
+            source = { url = "https://github.com/conda-forge/numpy-feedstock/archive/main.zip" }
+            "#
+        ));
+    }
+
+    #[test]
+    fn test_url_source_with_sha256_succeeds() {
+        let toml = r#"
+            backend = { name = "foobar", version = "*" }
+            source = { url = "https://github.com/conda-forge/numpy-feedstock/archive/main.zip", sha256 = "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef" }
+        "#;
+        let parsed = <TomlPackageBuild as crate::toml::FromTomlStr>::from_toml_str(toml)
+            .and_then(TomlPackageBuild::into_build_system)
+            .expect("parsing should succeed");
+
+        assert!(parsed.warnings.is_empty());
+    }
+
+    #[test]
+    fn test_git_source_requires_rev() {
+        assert_snapshot!(expect_parse_failure(
+            r#"
+            backend = { name = "foobar", version = "*" }
+            source = { git = "https://github.com/conda-forge/numpy-feedstock" }
+            "#
+        ));
     }
 }

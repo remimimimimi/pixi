@@ -126,7 +126,7 @@ mod tests {
               "https://prefix.dev/pixi-build-backends",
               "https://prefix.dev/conda-forge",
             ]
-            source = { url = "https://github.com/conda-forge/numpy-feedstock/archive/main.zip" }
+            source = { url = "https://github.com/conda-forge/numpy-feedstock/archive/main.zip", sha256 = "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef" }
             "#;
 
         let build = PackageBuild::from_toml_str(toml).unwrap();
