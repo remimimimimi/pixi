@@ -708,10 +708,9 @@ class SourceLocation(StrictBaseModel):
 
     path: NonEmptyStr | None = Field(None, description="The path to the source")
 
-    # TODO: url and git source
-    # url: NonEmptyStr | None = Field(None, description="The URL to the source")
-    # md5: Md5Sum | None = Field(None, description="The md5 hash of the source")
-    # sha256: Sha256Sum | None = Field(None, description="The sha256 hash of the source")
+    url: NonEmptyStr | None = Field(None, description="The URL to the source")
+    md5: Md5Sum | None = Field(None, description="The md5 hash of the source")
+    sha256: Sha256Sum | None = Field(None, description="The sha256 hash of the source")
 
     git: NonEmptyStr | None = Field(None, description="The git URL to the source repo")
     rev: NonEmptyStr | None = Field(None, description="A git SHA revision to use")
