@@ -1,0 +1,11 @@
+---
+source: crates/pixi_manifest/src/toml/build_backend.rs
+expression: "expect_parse_failure(r#\"\n            backend = { name = \"foobar\", version = \"*\" }\n            source = { url = \"https://github.com/conda-forge/numpy-feedstock/archive/main.zip\" }\n            \"#)"
+---
+  × URL sources in build context require an explicit `sha256` field for reproducible builds
+   ╭─[pixi.toml:3:22]
+ 2 │             backend = { name = "foobar", version = "*" }
+ 3 │             source = { url = "https://github.com/conda-forge/numpy-feedstock/archive/main.zip" }
+   ·                      ───────────────────────────────────────────────────────────────────────────
+ 4 │
+   ╰────

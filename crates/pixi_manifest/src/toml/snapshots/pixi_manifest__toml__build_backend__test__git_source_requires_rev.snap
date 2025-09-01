@@ -1,0 +1,11 @@
+---
+source: crates/pixi_manifest/src/toml/build_backend.rs
+expression: "expect_parse_failure(r#\"\n            backend = { name = \"foobar\", version = \"*\" }\n            source = { git = \"https://github.com/conda-forge/numpy-feedstock\" }\n            \"#)"
+---
+  × Git sources in build context require an explicit `rev` field for reproducible builds
+   ╭─[pixi.toml:3:22]
+ 2 │             backend = { name = "foobar", version = "*" }
+ 3 │             source = { git = "https://github.com/conda-forge/numpy-feedstock" }
+   ·                      ──────────────────────────────────────────────────────────
+ 4 │
+   ╰────
