@@ -307,20 +307,28 @@ pub async fn execute(args: Args) -> miette::Result<()> {
     // Print as table string or JSON
     if args.json || args.json_pretty {
         // print packages as json
-        json_packages(&packages_to_output, args.json_pretty);
+        if let Err(err) = json_packages(&packages_to_output, args.json_pretty) {
+            if err.kind() != io::ErrorKind::BrokenPipe {
+                Err::<(), _>(err).into_diagnostic()?;
+            }
+        }
     } else {
         if !environment.is_default() {
             eprintln!("Environment: {}", environment.name().fancy_display());
         }
 
         // print packages as table
-        print_packages_as_table(&packages_to_output).expect("an io error occurred");
+        if let Err(err) = print_packages_as_table(&packages_to_output) {
+            if err.kind() != io::ErrorKind::BrokenPipe {
+                Err::<(), _>(err).into_diagnostic()?;
+            }
+        }
     }
 
     Ok(())
 }
 
-fn print_packages_as_table(packages: &Vec<PackageToOutput>) -> io::Result<()> {
+fn print_packages_as_table(packages: &[PackageToOutput]) -> io::Result<()> {
     let mut writer = tabwriter::TabWriter::new(stdout());
 
     let header_style = console::Style::new().bold();
@@ -375,7 +383,7 @@ fn print_packages_as_table(packages: &Vec<PackageToOutput>) -> io::Result<()> {
     writer.flush()
 }
 
-fn json_packages(packages: &Vec<PackageToOutput>, json_pretty: bool) {
+fn json_packages(packages: &[PackageToOutput], json_pretty: bool) -> io::Result<()> {
     let json_string = if json_pretty {
         serde_json::to_string_pretty(&packages)
     } else {
@@ -383,7 +391,10 @@ fn json_packages(packages: &Vec<PackageToOutput>, json_pretty: bool) {
     }
     .expect("Cannot serialize packages to JSON");
 
-    println!("{}", json_string);
+    let mut stdout = stdout().lock();
+    stdout.write_all(json_string.as_bytes())?;
+    stdout.write_all(b"\n")?;
+    stdout.flush()
 }
 
 /// Return the size and source location of the pypi package
