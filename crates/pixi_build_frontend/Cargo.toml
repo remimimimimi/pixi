@@ -14,6 +14,7 @@ fs-err = { workspace = true, features = ["tokio"] }
 futures = { workspace = true }
 jsonrpsee = { workspace = true, features = ["client"] }
 miette = { workspace = true, features = ["fancy-no-backtrace", "serde"] }
+once_cell = { workspace = true }
 ordermap = { workspace = true }
 pixi_build_discovery = { workspace = true }
 pixi_build_types = { workspace = true }
