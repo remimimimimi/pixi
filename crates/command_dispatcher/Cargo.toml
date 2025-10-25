@@ -1,0 +1,20 @@
+[package]
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+name = "command_dispatcher"
+readme.workspace = true
+repository.workspace = true
+version = "0.1.0"
+
+[lib]
+name = "command_dispatcher"
+path = "src/lib.rs"
+
+[dependencies]
+futures = { workspace = true }
+pin-project-lite = { workspace = true }
+tokio = { workspace = true, features = ["sync"] }
+tokio-util = { workspace = true }
+tracing = { workspace = true }
